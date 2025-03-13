@@ -7,7 +7,7 @@ export const swaggerDocument = {
   },
   servers: [
     {
-      url: "http://localhost:5001/api/v1",
+      url: "https://pokemon-api-agde.onrender.com/api/v1",
       description: "Local development server",
     },
   ],
