@@ -52,8 +52,9 @@ export class Pokemon implements IPokemon {
     return new Pokemon(
       api_data.name,
       api_data.id,
-      api_data.sprites["front_default"],
-      api_data.sprites["back_default"],
+      api_data.sprites["other"]?.["official-artwork"]?.["front_shiny"] ||
+        api_data.sprites["front_shiny"],
+      api_data.sprites["back_shiny"],
       api_data.weight,
       api_data.height,
       api_data.stats[0]["base_stat"],
