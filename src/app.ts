@@ -29,7 +29,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use("/api/v1/pokemon", pokemon);
 app.use(RouteNotFoundMiddleware);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is listening on: ${PORT}`);
+const port = process.env.PORT || 5001;
+app.listen(port, () => {
+  console.log(`Server is listening on: ${port}`);
 });
