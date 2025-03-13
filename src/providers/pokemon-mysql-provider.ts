@@ -1,4 +1,4 @@
-import pool from "config/db";
+import pool from "@/config/db";
 
 export const bulkInsertPokemons = async (pokemons: any[]) => {
   const client = await pool.connect();

@@ -15,7 +15,9 @@
     "@/data": "dist/data",
     "@/middleware": "dist/middleware",
     "@/controllers": "dist/controllers",
-    "@/db": "dist/db",
+    "@/providers": "dist/providers",
+    "@/models": "dist/models",
+    "@/config": "dist/config",
     "@/utils": "dist/utils"
   },
   "author": "abhishek-jha",

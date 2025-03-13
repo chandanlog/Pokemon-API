@@ -2,13 +2,16 @@ import { Request, Response, NextFunction } from "express";
 import { ApiSuccess } from "@/utils/ApiSucess";
 import { asyncHandler } from "@/middleware/async-middleware";
 import { IPokemon } from "interfaces/interfaces.common";
-import { fetchPokemonDetails, fetchPokemons } from "providers/pokemon-provider";
-import { Pokemon } from "models/pokemon";
+import {
+  fetchPokemonDetails,
+  fetchPokemons,
+} from "@/providers/pokemon-provider";
+import { Pokemon } from "@/models/pokemon";
 import {
   bulkInsertPokemons,
   getPaginatedPokemons,
   updatePokemonAsFavourite,
-} from "providers/pokemon-mysql-provider";
+} from "@/providers/pokemon-mysql-provider";
 
 export const savePokemons = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
