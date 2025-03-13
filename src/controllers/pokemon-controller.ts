@@ -63,7 +63,7 @@ export const getPokemons = asyncHandler(
 export const updatePokemon = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { pokemonId, isFavourite: req_isFav } = req.params;
-    const isFavourite = new Boolean(req_isFav) ? 1 : 0;
+    const isFavourite = req_isFav !== "0" && new Boolean(req_isFav) ? 1 : 0;
 
     const updatedPokemon = await updatePokemonAsFavourite(
       pokemonId,
