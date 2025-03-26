@@ -1,43 +1,22 @@
-import pool from "@/config/db";
+import pool from "../config/db";
+//import { IPokemon } from "@/interfaces/interfaces.common";
+import { IPokemon } from "../interfaces/interfaces.common";
 
-export const bulkInsertPokemons = async (pokemons: any[]) => {
-  const client = await pool.connect();
+export const bulkInsertPokemons = async (pokemons: IPokemon[]) => {
+  const connection = await pool.getConnection();
 
   try {
-    await client.query("BEGIN");
+    await connection.beginTransaction();
 
-    await client.query("DELETE FROM pokemons");
+    await connection.query("DELETE FROM pokemons");
 
     const insertQuery = `
       INSERT INTO pokemons (
         id, name, front_image, back_image, weight, height, hp, attack, defence, special_attack, special_defence, speed, type, is_favourite
-      ) VALUES 
-      ${pokemons
-        .map(
-          (_, index) =>
-            `(${[
-              "id",
-              "name",
-              "front_image",
-              "back_image",
-              "weight",
-              "height",
-              "hp",
-              "attack",
-              "defence",
-              "special_attack",
-              "special_defence",
-              "speed",
-              "type",
-              "is_favourite",
-            ]
-              .map((column, colIndex) => `$${index * 14 + colIndex + 1}`)
-              .join(", ")})`
-        )
-        .join(", ")}
+      ) VALUES ?
     `;
 
-    const values = pokemons.flatMap((pokemon) => [
+    const values = pokemons.map((pokemon) => [
       pokemon.id,
       pokemon.name,
       pokemon.front_image,
@@ -50,18 +29,19 @@ export const bulkInsertPokemons = async (pokemons: any[]) => {
       pokemon.special_attack,
       pokemon.special_defence,
       pokemon.speed,
-      JSON.stringify(pokemon.type),
-      0,
+      JSON.stringify(pokemon.type), // Store type as a JSON string
+      0, // Default is_favourite to false (0)
     ]);
 
-    await client.query(insertQuery, values);
-    await client.query("COMMIT");
-    console.log(`${pokemons.length} records inserted successfully`);
+    await connection.query(insertQuery, [values]);
+
+    await connection.commit();
+    console.log(`${pokemons.length} Pokémon records inserted successfully.`);
   } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error inserting records:", error);
+    await connection.rollback();
+    console.error("Error inserting Pokémon records:", error);
   } finally {
-    client.release();
+    connection.release();
   }
 };
 
@@ -70,76 +50,62 @@ export const getPaginatedPokemons = async (
   limit: number,
   searchTerm?: string,
   isFavourite?: boolean
-) => {
-  const client = await pool.connect();
+): Promise<IPokemon[]> => {
+  const connection = await pool.getConnection();
 
   try {
     const offset = (page - 1) * limit;
 
-    let searchQuery = `
-        SELECT * FROM pokemons
-        WHERE TRUE
-      `;
+    let searchQuery = `SELECT * FROM pokemons WHERE 1=1`; // Always true
     const queryParams: any[] = [];
 
     if (searchTerm) {
-      searchQuery += `
-          AND name ILIKE $${
-            queryParams.length + 1
-          }  -- Use ILIKE for case-insensitive search
-        `;
+      searchQuery += ` AND name LIKE ?`;
       queryParams.push(`%${searchTerm}%`);
     }
     if (isFavourite !== undefined) {
-      searchQuery += `
-          AND is_favourite = $${queryParams.length + 1}
-        `;
+      searchQuery += ` AND is_favourite = ?`;
       queryParams.push(isFavourite ? 1 : 0);
     }
 
-    searchQuery += `
-        LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}
-      `;
+    searchQuery += ` LIMIT ? OFFSET ?`;
     queryParams.push(limit, offset);
-    const res = await client.query(searchQuery, queryParams);
-    return res.rows;
+
+    const [rows] = await connection.query(searchQuery, queryParams);
+    return rows as IPokemon[];
   } catch (error) {
-    console.error("Error fetching paginated pokemons:", error);
+    console.error("Error fetching paginated Pokémon:", error);
     throw error;
   } finally {
-    client.release();
+    connection.release();
   }
 };
 
 export const updatePokemonAsFavourite = async (
   pokemonId: string,
   isFavourite: number
-) => {
-  const client = await pool.connect();
+): Promise<IPokemon | null> => {
+  const connection = await pool.getConnection();
 
   try {
     const updateQuery = `
-        UPDATE pokemons
-        SET is_favourite = $1
-        WHERE id = $2
-        RETURNING *;
-      `;
+      UPDATE pokemons
+      SET is_favourite = ?
+      WHERE id = ?
+    `;
 
-    const res = await client.query(updateQuery, [isFavourite, pokemonId]);
+    await connection.query(updateQuery, [isFavourite, pokemonId]);
 
-    if (res.rowCount && res.rowCount > 0) {
-      console.log(
-        `Pokemon with ID ${pokemonId} marked as favourite: ${isFavourite}`
-      );
-      return res.rows[0];
-    } else {
-      console.log(`Pokemon with ID ${pokemonId} not found.`);
-      return null;
-    }
+    const [rows]: any = await connection.query(
+      `SELECT * FROM pokemons WHERE id = ?`,
+      [pokemonId]
+    );
+
+    return rows.length > 0 ? (rows[0] as IPokemon) : null;
   } catch (error) {
-    console.error("Error marking Pokémon as favourite:", error);
+    console.error("Error updating Pokémon as favourite:", error);
     throw error;
   } finally {
-    client.release();
+    connection.release();
   }
 };
